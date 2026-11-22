@@ -1,5 +1,3 @@
-# engineering
-
 **Engineering habits for your coding agent.** A Claude Code plugin
 that makes the agent plan before it codes, ask you one decision at a
 time, and prove its work before it says "done".
