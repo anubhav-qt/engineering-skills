@@ -1,6 +1,6 @@
 # engineering
 
-**Senior engineering habits for your coding agent.** A Claude Code plugin
+**Engineering habits for your coding agent.** A Claude Code plugin
 that makes the agent plan before it codes, ask you one decision at a
 time, and prove its work before it says "done".
 
@@ -22,7 +22,7 @@ Coding agents are fast, but left alone they:
 - write clever code nobody wants to read;
 - say "done, all tests pass" when the tests would pass with the bug in.
 
-These skills fix that with habits a careful senior engineer already has.
+These skills fix that with habits a careful engineer already has.
 Every rule is written down as steps, and every exact step is a tested
 script, so the agent follows them the same way every time.
 
