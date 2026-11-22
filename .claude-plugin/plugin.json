@@ -1,5 +1,11 @@
 {
-  "name": "agent-skills",
-  "description": "Engineering habits as agent skills: plan first, one decision at a time, simple code, real tests.",
-  "version": "0.1.0"
+  "name": "engineering",
+  "description": "Engineering habits as agent skills: plan first, one decision at a time, simple code, proven tests.",
+  "version": "0.1.0",
+  "author": {
+    "name": "anubhav-qt"
+  },
+  "repository": "https://github.com/anubhav-qt/agent-skills",
+  "license": "MIT",
+  "keywords": ["planning", "testing", "mutation-testing", "agents-md", "engineering"]
 }

@@ -1,12 +1,13 @@
 {
-  "name": "agent-skills",
+  "name": "anubhav-qt",
+  "description": "Claude Code plugins by anubhav-qt.",
   "owner": {
     "name": "anubhav-qt"
   },
   "plugins": [
     {
-      "name": "agent-skills",
-      "description": "Engineering habits as agent skills: plan first, one decision at a time, simple code, real tests.",
+      "name": "engineering",
+      "description": "Engineering habits as agent skills: plan first, one decision at a time, simple code, proven tests.",
       "source": "./"
     }
   ]
