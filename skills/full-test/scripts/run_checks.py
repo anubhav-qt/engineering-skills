@@ -65,6 +65,7 @@ def run_command(command, root, timeout, env):
         # Ctrl+C or any crash: stop the check so it does not outlive us.
         kill_process_group(process)
         process.wait()
+        process.stdout.close()
         raise
     seconds = time.monotonic() - started
     passed = process.returncode == 0 and not timed_out

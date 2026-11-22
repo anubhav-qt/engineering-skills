@@ -172,11 +172,21 @@ class RunTest(ChecksTest):
 
     def test_interrupt_stops_the_check(self):
         self.write_checks([{"name": "tests", "command": PASS}])
-        with mock.patch.object(subprocess.Popen, "communicate", side_effect=KeyboardInterrupt):
-            with mock.patch.object(run_checks, "kill_process_group") as kill:
-                with self.assertRaises(KeyboardInterrupt):
-                    self.run_main()
+        started = []
+        real_popen = subprocess.Popen
+
+        def spy(*args, **kwargs):
+            process = real_popen(*args, **kwargs)
+            started.append(process)
+            return process
+
+        with mock.patch.object(run_checks.subprocess, "Popen", side_effect=spy):
+            with mock.patch.object(real_popen, "communicate", side_effect=KeyboardInterrupt):
+                with mock.patch.object(run_checks, "kill_process_group") as kill:
+                    with self.assertRaises(KeyboardInterrupt):
+                        self.run_main()
         kill.assert_called_once()
+        self.assertTrue(started[0].stdout.closed)
 
     def test_odd_output_bytes_do_not_crash(self):
         command = f'{PYTHON} -c "import sys; sys.stdout.buffer.write(bytes([255, 254])); sys.exit(1)"'

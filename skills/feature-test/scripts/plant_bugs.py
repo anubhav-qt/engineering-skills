@@ -58,6 +58,7 @@ def run_tests(command, root, timeout):
         # Ctrl+C or any crash: stop the tests so they do not outlive us.
         kill_process_group(process)
         process.wait()
+        process.stdout.close()
         raise
     seconds = time.monotonic() - started
     passed = process.returncode == 0

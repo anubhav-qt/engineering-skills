@@ -158,6 +158,7 @@ class PlantTest(ProjectTest):
         process = started[0]
         self.addCleanup(process.kill)
         self.assertIsNotNone(process.poll())
+        self.assertTrue(process.stdout.closed)
 
     def test_find_text_missing(self):
         self.write_bugs([{"file": "calc.py", "find": "no such text", "replace": "x"}])
