@@ -9,7 +9,7 @@ time, and prove its work before it says "done".
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776ab.svg)
 
 ```
-/plugin marketplace add anubhav-qt/agent-skills
+/plugin marketplace add anubhav-qt/engineering-skills
 /plugin install engineering@anubhav-qt
 ```
 
@@ -125,14 +125,14 @@ work on running mutation testing on changed code only).
 In Claude Code, run these two commands:
 
 ```
-/plugin marketplace add anubhav-qt/agent-skills
+/plugin marketplace add anubhav-qt/engineering-skills
 /plugin install engineering@anubhav-qt
 ```
 
 Or from a terminal:
 
 ```bash
-claude plugin marketplace add anubhav-qt/agent-skills
+claude plugin marketplace add anubhav-qt/engineering-skills
 ```
 
 ```bash
@@ -142,7 +142,7 @@ claude plugin install engineering@anubhav-qt
 To try a local copy without installing:
 
 ```bash
-claude --plugin-dir path/to/agent-skills
+claude --plugin-dir path/to/engineering-skills
 ```
 
 The scripts need Python 3.9 or newer, standard library only.
