@@ -37,7 +37,7 @@ How long may replies be?
   4. Type your own answer.
 ```
 
-test plants bugs in the code you just changed, one at a time, and checks
+feature-test plants bugs in the code you just changed, one at a time, and checks
 the tests catch each one. Here the tests looked fine, and still missed
 two real mistakes:
 
@@ -72,7 +72,8 @@ I skipped speed checks because the function has no loop or slow work in it.
 | Skill | Command | What it does |
 | --- | --- | --- |
 | kickoff | `/engineering:kickoff` | Plans a new or existing project with you before any code is written, then sets up the files the agent needs. |
-| test | `/engineering:test` | Proves a change works: tests, browser checks, profiling, then planted bugs to check the tests catch real mistakes. |
+| feature-test | `/engineering:feature-test` | Proves one change works, checking only what it touches: tests, browser checks, profiling, then planted bugs to check the tests catch real mistakes. |
+| full-test | `/engineering:full-test` | Tests the whole PR just before it is sent: every CI check in a clean copy merged onto the latest target branch, the few user journeys it could break, and a review of the whole diff. |
 
 ### kickoff
 
@@ -94,16 +95,17 @@ Run it at the start of a project, or in an existing repo. It:
 
 It runs only when you call it.
 
-### test
+### feature-test
 
 The agent runs it on its own when it finishes a change, or you call it.
-It:
+It checks only what the change touches, so it stays fast. It:
 
 - reads the diff and works out what a user can now do;
 - makes sure tests cover it, testing behavior rather than internals, with
   real dependencies where it can; for a bug fix, it writes the failing
   test first and watches it fail;
-- runs the whole suite and fixes the code, never the test;
+- runs only the tests related to the change (the whole suite when config,
+  dependencies or shared code changed), and fixes the code, never the test;
 - for anything on screen, clicks through every changed input and button
   in the browser with edge cases (empty, too long, odd characters,
   double clicks, disabled states, keyboard only, phone width);
@@ -117,6 +119,31 @@ It:
 The rules come from the author's own practice plus published advice on
 testing, flaky tests, profiling, and mutation testing (including Google's
 work on running mutation testing on changed code only).
+
+### full-test
+
+The agent runs it right before it opens or updates a PR, or you call it.
+It:
+
+- makes a throwaway copy of the PR merged onto the latest target branch
+  (whatever the PR merges into, not always `main`), with your uncommitted
+  changes, so your folder is never touched and ignored files like `.env`
+  cannot make a check pass by accident;
+- reads your CI config and runs the same checks, cheapest first: clean
+  install from the lockfile, lint, type check, production build, the
+  full test suite, and migrations on a throwaway database if they changed;
+- runs every check even after one fails, so one run shows every problem;
+- fixes obvious failures itself (lint, types, a broken import) and brings
+  you only real decisions;
+- runs a failing check on the target branch too, so old problems never
+  block your PR, and reruns a failing test on the same code to tell
+  flaky from broken, never retrying until green;
+- walks only the few user journeys this PR could break, in the browser;
+- scans the whole diff for debug leftovers, focused or skipped tests,
+  conflict markers, secrets (shown cut short), env and key files.
+
+The rules come from published advice on pre-merge checks, merge skew,
+test selection, flaky tests and self-review.
 
 ## Install
 
@@ -156,8 +183,9 @@ Each skill follows the same rules it teaches:
 
 ```
 skills/
-  kickoff/   SKILL.md, scripts/, references/, assets/
-  test/      SKILL.md, scripts/, references/
+  kickoff/        SKILL.md, scripts/, references/, assets/
+  feature-test/   SKILL.md, scripts/, references/
+  full-test/      SKILL.md, scripts/, references/
 tests/       unit tests for the scripts
 ```
 

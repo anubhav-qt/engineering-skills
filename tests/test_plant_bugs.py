@@ -1,4 +1,4 @@
-"""Tests for skills/test/scripts/plant_bugs.py.
+"""Tests for skills/feature-test/scripts/plant_bugs.py.
 
 Run from the repo root: python3 -m unittest discover tests
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = REPO_ROOT / "skills" / "test" / "scripts" / "plant_bugs.py"
+SCRIPT = REPO_ROOT / "skills" / "feature-test" / "scripts" / "plant_bugs.py"
 
 spec = importlib.util.spec_from_file_location("plant_bugs", SCRIPT)
 plant_bugs = importlib.util.module_from_spec(spec)
