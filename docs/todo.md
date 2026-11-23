@@ -12,7 +12,8 @@ then one decision at a time, then build, test, plant bugs, live run.
 - [x] Rename test to feature-test, and narrow it to only what the feature touches (no full suite, no full type check), leaving the rest to full-test.
 - [ ] security: live attack testing (network tab, console, headers, auth, injection, exposed secrets, dependency audit), beyond the built-in /security-review that only reads code.
 - [x] debug: reproduce first, find the real cause, never patch the symptom, keep a test for it.
-- [ ] logger: add logging only where it helps (errors, key events, slow paths), no noise.
+- [x] logger: add logs, metrics and traces only where they help, test them, and prove fake secrets stay out.
+- [ ] logger follow-up: find_log_calls.py lists log calls inside Python docstring examples (listed, never flagged).
 - [ ] visibility-handling: SEO, AEO, accessibility and anything that makes the product visible on the web; used only when needed.
 - [ ] SHIP-IT: final commits, push, PR, deploy, and a rollback plan. Command `/engineering:SHIP-IT`, title "SHIP-IT" (no "!", it is not allowed in skill names).
 - [ ] When building SHIP-IT: add staging to it (deploy to staging, check, then production), and make kickoff ask about staging (is there one, where, how to deploy).
