@@ -45,6 +45,8 @@ Updated: 2026-11-23
 - Type passwords or codes, or change Search Console or Bing settings
   beyond adding, verifying and submitting the site.
 - Change robots.txt rules for AI crawlers without the human's choice.
+  Ask one question per choice (AI search, then training), as
+  `references/aeo.md` says.
 - Install Lighthouse, pa11y, axe CLI or any package without asking.
   `npx` counts as installing.
 - Add an accessibility overlay widget, or call one a fix.

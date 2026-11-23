@@ -195,6 +195,34 @@ class ProbeTest(unittest.TestCase):
             self.assertIn("focus-not-visible", found)
             self.assertEqual(found["focus-not-visible"]["examples"], ['button.plain "Plain"'])
 
+    def test_hidden_parent_hides_its_small_buttons(self):
+        result = run_asset(
+            "a11y_probe.js",
+            "<title>t</title><style>.tiny { width: 16px; height: 16px; padding: 0; border: 0; }</style>",
+            '<main><h1>x</h1><div style="display:none"><button class="tiny" aria-label="Close">x</button></div></main>',
+        )
+        self.assertNotIn("small-target", self.rules(result))
+
+    def test_focus_without_a_visible_ring_mode_is_not_judged(self):
+        # Stands in for a focused window after a mouse click: focus lands,
+        # but no control matches :focus-visible.
+        stub = (
+            "<script>const real = Element.prototype.matches;"
+            "Element.prototype.matches = function (s) {"
+            " if (s === ':focus') { return document.activeElement === this; }"
+            " if (s === ':focus-visible') { return false; }"
+            " return real.call(this, s); };"
+            "</script>"
+        )
+        result = run_asset(
+            "a11y_probe.js",
+            "<title>t</title><style>.plain:focus { outline: none; }</style>" + stub,
+            '<main><h1>x</h1><button class="plain">Plain</button></main>',
+        )
+        self.assertNotIn("focus-not-visible", self.rules(result))
+        not_checked = " ".join(result["notChecked"])
+        self.assertIn("1 control(s) skipped, the browser hides focus rings after a mouse click", not_checked)
+
     def test_headings_and_vitals(self):
         self.assertEqual(self.good["headings"], ["h1 Shop", "h2 Deals"])
         self.assertIn("INP needs real users", self.good["vitals"]["note"])
@@ -234,6 +262,15 @@ class PageFieldsTest(unittest.TestCase):
         self.assertEqual(result["h1Count"], 1)
         self.assertEqual(result["lang"], "en")
         self.assertGreater(result["textLength"], 10)
+
+    def test_waits_for_a_late_app_to_draw(self):
+        body = (
+            "<div id=root></div><script>"
+            "setTimeout(() => { document.getElementById('root').innerHTML = '<h1>Mugs</h1>'; }, 800);"
+            "</script>"
+        )
+        result = run_asset("page_fields.js", "<title>Shop</title>", body)
+        self.assertEqual(result["h1Count"], 1)
 
 
 NODE = shutil.which("node")

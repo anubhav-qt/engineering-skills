@@ -7,7 +7,12 @@ US ADA Title II and today's EN 301 549 (EU Accessibility Act) use.
 
 ## Automated pass (step 7)
 
-Run both on each page with `javascript_tool` (paste the file's text).
+Run both on each page with `javascript_tool`. Paste the file's text,
+or, to save the paste: copy `<skill dir>/assets/` into the folder the
+local build serves (for example `dist/__vis/`; copy again after each
+build), then run
+`await (0,eval)(await (await fetch('/__vis/run_axe.js')).text())`.
+Delete that folder in clean-up.
 
 1. `assets/run_axe.js`: loads axe-core 4.14.1 from jsdelivr and runs the
    WCAG 2.0 to 2.2 A and AA rules.
@@ -21,9 +26,10 @@ Run both on each page with `javascript_tool` (paste the file's text).
    plus a few axe basics for when axe is blocked. Each finding names its
    WCAG criterion and up to three example elements. Everything is a
    lead: open the element and confirm.
-   - `focus-not-visible` needs window focus: if `notChecked` says so,
-     click the page in the browser pane and run it again, or check by
-     Tab in step 8.
+   - `focus-not-visible` needs window focus and keyboard mode: if
+     `notChecked` says the window has no focus, click the page and run
+     it again; if it says rings are hidden after a mouse click, press
+     Tab once in the page and run it again. Or check by Tab in step 8.
    - `fake-control` is anything with a pointer cursor or `onclick` that
      is not a button or link. Confirm with the keyboard.
    - `small-target`: fine if it has 24 px of space around it.
@@ -54,11 +60,16 @@ Do it in the built-in browser on each changed screen:
   fields have `autocomplete` (1.3.5); nothing asked twice in one flow
   (3.3.7); login has no puzzle-only step and allows paste (3.3.8).
 - Dialogs: focus moves in, stays in, and returns to the opener on
-  close. Status messages ("added to cart") are announced with
+  close. Neither script checks these, so by hand: press Shift+Tab from
+  the first control (focus stays in); go to the next step inside the
+  dialog (focus is not lost to the page); close it after its opener is
+  gone (focus lands somewhere sensible, not the page top). Status messages ("added to cart") are announced with
   `role="status"` or `aria-live` (4.1.3).
 - Motion: honors `prefers-reduced-motion`; anything moving over 5 s can
   be paused (2.2.2); nothing flashes more than 3 times a second (2.3.1).
 - Dragging has a click alternative (2.5.7).
+- Single-page apps: the tab title changes with each view (2.4.2).
+  Neither script checks it: open two views and read `document.title`.
 - Alt text says what the image means here; decorative images get
   `alt=""`.
 

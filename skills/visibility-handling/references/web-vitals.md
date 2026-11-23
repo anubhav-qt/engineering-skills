@@ -10,7 +10,8 @@ sources; not rechecked on web.dev itself this round.
   machine. Open the page fresh (navigate, then run the probe) so the
   numbers cover the load. They are lab numbers: a fast laptop on
   localhost is not a phone on a train. Report them as "lab, this
-  machine".
+  machine". A null LCP (a hidden pane, or no large content): write
+  "LCP: not checked yet".
 - INP needs real interactions; say "INP: field only, not checked".
 - Lighthouse: only if already installed, against the production build.
 - PageSpeed Insights and the CrUX API give real-user numbers, but only

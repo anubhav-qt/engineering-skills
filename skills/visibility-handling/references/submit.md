@@ -8,7 +8,8 @@ passwords or codes, and approves consent screens.
 
 ## Ask once per run
 
-In chat, before anything else, list:
+In chat, before the run's fixes are deployed (so the tag and the key
+ship in that same deploy), list:
 - the site, exactly as the canonical URLs write it (for example
   `https://www.example.com/`);
 - the sitemap URL;
@@ -31,7 +32,8 @@ If the property already exists and is verified, go to step 4.
 
 ## 2. Add a URL-prefix property
 
-"Add property", then "URL prefix", with the site URL from the ask
+"Add property" (a new account sees "Add a website" instead), then
+"URL prefix", with the site URL from the ask
 (https, and www or not, as the canonical says). Domain properties need a
 DNS record: leave those to the human.
 
@@ -47,7 +49,7 @@ loses the property.
 ## 3. Same deploy: the IndexNow key
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/submit_indexnow.py" key <public folder>
+python3 "<skill dir>/scripts/submit_indexnow.py" key <public folder>
 ```
 
 It prints the project's key, making `<key>.txt` in the folder the site
@@ -67,7 +69,9 @@ status it shows and report it. Errors there are findings.
 ## 5. Request indexing
 
 "URL Inspection", paste a key page URL, wait for the result, then
-"Request indexing". Only the few key pages from the ask: there is a
+"Request indexing". In a narrow pane the inspect box hides behind a
+search icon at the top: click it. Never guess an inspect page's
+address; guessed ones answer 404. Only the few key pages from the ask: there is a
 daily limit per property, and Google gives no number. Never for the
 whole sitemap, a page with noindex, or a page that is not live.
 
@@ -78,8 +82,8 @@ tomorrow".
 
 Open https://www.bing.com/webmasters. The human signs in. Pick "Import"
 from Google Search Console; the human approves Google's consent screen.
-Choose the site, import, then check the sitemap shows in Bing's
-Sitemaps page.
+Choose the site and import. Bing shows no confirmation: open the site's
+Sitemaps page and check the sitemap is listed. If not, submit it there.
 
 If import is not offered, add the site by hand and verify it the way
 Bing's page says, using the same deploy rule.
@@ -87,8 +91,8 @@ Bing's page says, using the same deploy rule.
 ## 7. IndexNow
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/submit_indexnow.py" check-key <site URL> --key <key> --allow-host <host>
-python3 "${CLAUDE_SKILL_DIR}/scripts/submit_indexnow.py" send <changed URLs> --key <key> --allow-host <host>
+python3 "<skill dir>/scripts/submit_indexnow.py" check-key <site URL> --key <key> --allow-host <host>
+python3 "<skill dir>/scripts/submit_indexnow.py" send <changed URLs> --key <key> --allow-host <host>
 ```
 
 `send` checks the key file again, then posts at most 10,000 URLs, all

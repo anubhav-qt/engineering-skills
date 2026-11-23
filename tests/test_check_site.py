@@ -208,6 +208,17 @@ class CheckSiteTest(unittest.TestCase):
         code, output = run_main(check_site, [app.url])
         self.assertEqual(code, 0, output)
 
+    def test_live_sitemap_line_is_read_locally_with_map_host(self):
+        files = self.good_files()
+        files["/robots.txt"] = text(ROBOTS_OK + "Sitemap: https://shop.test/sitemap.xml\n")
+        files["/sitemap.xml"] = xml(sitemap(["https://shop.test/"]))
+        app = self.site(files)
+        code, output = run_main(check_site, [app.url])
+        self.assertIn("shop.test is not this machine", output)
+        code, output = run_main(check_site, [app.url, "--map-host", "shop.test"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("0 blocker(s), 0 major, 0 minor, 0 note(s), 1 not checked", output)
+
     def test_no_sitemap_is_minor(self):
         files = self.good_files()
         del files["/sitemap.xml"]
@@ -423,7 +434,7 @@ class DeployedChecksTest(unittest.TestCase):
 
     def test_other_host_not_allowed_is_not_checked(self):
         client = FakeClient({}, refused=("www.shop.test",))
-        [result] = check_site.check_one_host(client, "https://shop.test/")
+        [result] = check_site.check_one_host(client, "https://shop.test/", resolves=lambda host: True)
         self.assertEqual(result[0], crawl_http.NOT_CHECKED)
         self.assertIn("--allow-host www.shop.test", result[2])
         self.assertEqual(client.asked, [])
@@ -431,3 +442,22 @@ class DeployedChecksTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_other_host_with_no_dns_has_nothing_to_redirect(self):
+        client = FakeClient({}, refused=("www.shop.test",))
+        [result] = check_site.check_one_host(client, "https://shop.test/", resolves=lambda host: False)
+        self.assertEqual(result[0], crawl_http.NOTE)
+        self.assertIn("www.shop.test has no DNS record; nothing to redirect", result[2])
+        self.assertEqual(client.asked, [])
+
+
+class MapHostTest(unittest.TestCase):
+    def test_a_live_url_is_read_from_the_base(self):
+        hosts = check_site.HostMap("Shop.test", "http://localhost:4173/")
+        self.assertEqual(hosts.local("https://shop.test/books?x=1#top"), "http://localhost:4173/books?x=1")
+        self.assertEqual(hosts.local("https://shop.test"), "http://localhost:4173/")
+        self.assertEqual(hosts.local("https://other.test/a"), "https://other.test/a")
+
+    def test_no_map_keeps_every_url(self):
+        self.assertEqual(check_site.NO_MAP.local("https://shop.test/a"), "https://shop.test/a")
+

@@ -12,7 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from visibility_app import SKILL
 
 UPDATED = re.compile(r"^Updated: \d{4}-\d{2}-\d{2}", re.MULTILINE)
-MENTIONED_FILE = re.compile(r"`((?:scripts|assets|references)/[\w.-]+)`|\$\{CLAUDE_SKILL_DIR\}/((?:scripts|assets)/[\w.-]+)")
+MENTIONED_FILE = re.compile(
+    r"`((?:scripts|assets|references)/[\w.-]+)`|(?:\$\{CLAUDE_SKILL_DIR\}|<skill dir>)/((?:scripts|assets)/[\w.-]+)"
+)
 
 
 class SkillFilesTest(unittest.TestCase):
@@ -35,6 +37,15 @@ class SkillFilesTest(unittest.TestCase):
         self.assertGreater(len(names), 5)
         for name in sorted(names):
             self.assertTrue((SKILL / name).exists(), name)
+
+    def test_references_name_the_skill_folder_the_way_skill_md_defines(self):
+        # ${CLAUDE_SKILL_DIR} is filled in only inside SKILL.md, so the
+        # references use <skill dir>, which SKILL.md defines.
+        skill = (SKILL / "SKILL.md").read_text()
+        self.assertIn("This skill's folder is `${CLAUDE_SKILL_DIR}`", skill)
+        self.assertNotIn("<skill dir>/", skill)
+        for reference in sorted((SKILL / "references").glob("*.md")):
+            self.assertNotIn("CLAUDE_SKILL_DIR", reference.read_text(), reference.name)
 
 
 if __name__ == "__main__":

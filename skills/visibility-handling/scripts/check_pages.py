@@ -11,6 +11,9 @@ With --rendered it also compares the raw HTML with what the built-in
 browser rendered (the JSON from assets/page_fields.js): anything that
 only appears after JavaScript is invisible to AI crawlers.
 
+With --kept-out, pages meant to stay out of search (an admin page, a
+thank-you page) are checked only for the noindex that keeps them out.
+
 GET only. Exit codes: 0 nothing to fix, 1 something to fix, 2 could not start.
 """
 
@@ -102,6 +105,24 @@ def check_robots(url, response, facts):
     if "nofollow" in directives:
         results.append((NOTE, url, "meta robots says nofollow; crawlers will not follow this page's links"))
     return results
+
+
+def says_noindex(response, facts):
+    """True when the header or a meta tag says noindex."""
+    if header_noindex(response.header_list("X-Robots-Tag")):
+        return True
+    directives = facts.robots_directives()
+    for word in NOINDEX_WORDS:
+        if word in directives:
+            return True
+    return False
+
+
+def check_kept_out(url, response, facts):
+    """A page meant to stay out of search needs its noindex, and nothing else."""
+    if says_noindex(response, facts):
+        return [(NOTE, url, "noindex, kept out of search on purpose")]
+    return [(MAJOR, url, "meant to stay out of search, but has no noindex; it can show in results")]
 
 
 def check_title_and_description(url, facts):
@@ -355,14 +376,17 @@ def find_rendered(rendered_by_url, url, final_url):
     return None
 
 
-def check_page(client, url, rendered_by_url):
-    """Return (results, facts or None, final URL)."""
+def check_page(client, url, rendered_by_url, kept_out=False):
+    """Return (results, facts or None, final URL). Facts is None for a kept-out page too."""
     followed, results = fetch_page(client, url)
     if followed is None:
         return results, None, url
     response = followed.response
     final_url = response.url
     facts = page_facts.parse(response.text())
+    if kept_out:
+        results.extend(check_kept_out(url, response, facts))
+        return results, None, final_url
     results.extend(check_robots(url, response, facts))
     results.extend(check_title_and_description(url, facts))
     results.extend(check_canonical(client, url, final_url, facts))
@@ -410,10 +434,20 @@ def check_duplicates(pages):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="See each page the way a crawler without JavaScript sees it.")
-    parser.add_argument("urls", nargs="+", help="the public pages to check")
+    parser.add_argument("urls", nargs="*", help="the public pages to check")
     parser.add_argument("--rendered", help="JSON saved from assets/page_fields.js in the built-in browser")
+    parser.add_argument(
+        "--kept-out",
+        action="append",
+        default=[],
+        metavar="URL",
+        help="a page meant to stay out of search; checked only for its noindex (repeat for more)",
+    )
     crawl_http.add_target_args(parser)
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if not args.urls and not args.kept_out:
+        parser.error("give at least one page, or --kept-out URL")
+    return args
 
 
 def main(argv=None):
@@ -423,17 +457,26 @@ def main(argv=None):
     try:
         if args.rendered:
             rendered_by_url = load_rendered(args.rendered)
-        for url in args.urls:
+        for url in args.urls + args.kept_out:
             client.check(url)
     except (crawl_http.StartError, crawl_http.Refused) as error:
         print(f"cannot start: {error}")
         return 2
 
+    kept_out = set()
+    for url in args.kept_out:
+        kept_out.add(crawl_http.normalize_url(url))
+    to_check = list(args.urls)
+    for url in args.kept_out:
+        if url not in to_check:
+            to_check.append(url)
+
     results = []
     pages = []
     seen_final = set()
-    for url in args.urls:
-        page_results, facts, final_url = check_page(client, url, rendered_by_url)
+    for url in to_check:
+        is_kept_out = crawl_http.normalize_url(url) in kept_out
+        page_results, facts, final_url = check_page(client, url, rendered_by_url, is_kept_out)
         results.extend(page_results)
         if facts is None:
             continue

@@ -12,6 +12,9 @@ hype (llms.txt magic, AI scores, ranking promises) as a fix.
 Read `references/scope.md` before you start: what applies to this
 product, what to check per run, and what never to do.
 
+This skill's folder is `${CLAUDE_SKILL_DIR}`. The references write it
+as `<skill dir>`: use this same path there.
+
 ## Steps
 
 1. Gate. Find out what the product is from AGENTS.md, README or the
@@ -29,18 +32,24 @@ product, what to check per run, and what never to do.
 3. Serve the production build on this machine (`build` then `start` or
    a static server), not the dev server: dev servers skip server
    rendering and add overlays. Use the dev server only if there is no
-   build, and say so.
+   build, and say so. Local servers for single-page apps answer 200 for
+   any path, so a soft 404 fix that the host serves (a `404.html`) can
+   only be confirmed on the live site: say so.
 
 4. Crawler view of each public page, as a crawler without JavaScript
    sees it (every AI crawler measured so far):
 
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/check_pages.py" <page URLs>
+   python3 "${CLAUDE_SKILL_DIR}/scripts/check_pages.py" <page URLs> --kept-out <URL> ...
    ```
+
+   `--kept-out` marks pages meant to stay out of search (an admin page):
+   their noindex is a note, and a missing noindex is the finding.
 
 5. Rendered view. In the built-in browser, open each page and run
    `assets/page_fields.js` with `javascript_tool`. Save the results as
-   one JSON list in the temp folder, then compare:
+   one JSON list in the temp folder (it waits for a client-rendered app
+   to draw), then compare:
 
    ```bash
    python3 "${CLAUDE_SKILL_DIR}/scripts/check_pages.py" <page URLs> --rendered <temp>/rendered.json
@@ -52,6 +61,9 @@ product, what to check per run, and what never to do.
    python3 "${CLAUDE_SKILL_DIR}/scripts/check_site.py" <base URL> --path <key page path> ...
    ```
 
+   If robots.txt or the sitemap names the live host, add
+   `--map-host <live host>`: those URLs are then read from this machine.
+
    Before launch, add `--crawl 200` for broken links and pages missing
    from the sitemap. The AI crawler lines are facts for the human, not
    findings: `references/aeo.md` says how to ask about them.
@@ -60,7 +72,10 @@ product, what to check per run, and what never to do.
    `assets/run_axe.js`, then `assets/a11y_probe.js`, with
    `javascript_tool`. If axe is blocked by the page's CSP, say
    "axe: not checked yet" and ask before changing any CSP.
-   `references/accessibility.md` says how to read both.
+   `references/accessibility.md` says how to read both, and how to load
+   the files without pasting them. If `tabs_context` says the pane is
+   hidden, ask the human to show it first: a hidden pane gives no LCP
+   and fails the focus checks.
 
 8. Accessibility, by hand, as `references/accessibility.md` says:
    keyboard walk, focus visible and not hidden, names in `read_page`
@@ -83,7 +98,12 @@ product, what to check per run, and what never to do.
     native HTML over ARIA. After each fix, rerun the same check and
     watch the finding go. For each blocker, add one test in the
     project's own test setup that fails if it comes back; ask before
-    adding a new test framework. Then hand off to feature-test.
+    adding a new test framework. Then run the feature-test skill on what
+    you changed, now, before the report.
+
+    Shipping the fixes follows the project's release rules (AGENTS.md,
+    CLAUDE.md). A changelog or release note may need the human's yes on
+    every line: never write one alone.
 
 13. Clean up: the temp folder and any server you started.
 
@@ -93,11 +113,17 @@ product, what to check per run, and what never to do.
     - what you fixed, and the decisions left for the human, one at a time;
     - the human's list: screen reader pass, items needing content or
       brand choices;
-    - anything not run, marked "not checked yet".
+    - anything not run, marked "not checked yet";
+    - for public pages that will be submitted (step 16): ask the submit
+      question now, before the fixes are deployed, so the verification
+      tag and the IndexNow key go out in the same deploy.
 
 15. Then ask whether to check the deployed site. Only on a yes in chat,
     for that run: pass `--allow-host <host>` to both scripts (GET only,
-    capped, slow) and repeat steps 4 to 7 there.
+    capped, slow) and repeat steps 4 to 7 there. The live site does not
+    serve this skill's files, so paste them. For the same build that was
+    checked here, `run_axe.js` and `page_fields.js` are enough; paste
+    `a11y_probe.js` only if the live build differs.
 
 16. Submit the live site, as `references/submit.md` says. Ask once per
     run in chat, listing the site, the sitemap and the URLs. On a yes,
@@ -119,7 +145,9 @@ product, what to check per run, and what never to do.
   JavaScript fix that removes it may never run.
 - AI crawlers do not run JavaScript. A client-only app is an empty page
   to them, whatever Google renders later. Moving to server rendering is
-  a big change: ask.
+  a big change: ask. A smaller middle step: static text inside the root
+  element (title, a short description, key links) that the app replaces
+  as it starts. Still ask.
 - `priority` and `changefreq` in sitemaps do nothing. FAQ and HowTo
   rich results are gone. llms.txt is optional and unproven for search.
 - Never silence a check: no `aria-hidden` or `role="presentation"` on a

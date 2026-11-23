@@ -282,6 +282,35 @@ class CheckPagesTest(unittest.TestCase):
         code, output = self.run_pages(app, ["/", "/old"])
         self.assertNotIn("same title", output)
 
+    def test_kept_out_page_with_noindex_is_a_note(self):
+        noindex = '<meta name="robots" content="noindex">'
+        app = self.site({"/": self.good_page(), "/admin": self.good_page(path="/admin", head_extra=noindex)})
+        code, output = self.run_pages(app, ["/"], ["--kept-out", app.url.rstrip("/") + "/admin"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("noindex, kept out of search on purpose", output)
+        self.assertNotIn("BLOCKER", output)
+        self.assertNotIn("same title", output)
+
+    def test_kept_out_page_without_noindex_is_major(self):
+        app = self.site({"/admin": self.good_page(path="/admin")})
+        code, output = self.run_pages(app, [], ["--kept-out", app.url.rstrip("/") + "/admin"])
+        self.assertEqual(code, 1)
+        self.assertIn("meant to stay out of search, but has no noindex", output)
+
+    def test_kept_out_header_noindex_counts(self):
+        def respond(url):
+            status, headers, body = self.good_page(path="/admin")(url)
+            return status, [*headers, ("X-Robots-Tag", "noindex")], body
+
+        app = self.site({"/admin": respond})
+        code, output = self.run_pages(app, [], ["--kept-out", app.url.rstrip("/") + "/admin"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("kept out of search on purpose", output)
+
+    def test_no_pages_at_all_cannot_start(self):
+        with self.assertRaises(SystemExit):
+            run_main(check_pages, [])
+
     def test_out_of_scope_url_cannot_start(self):
         code, output = run_main(check_pages, ["https://example.com/"])
         self.assertEqual(code, 2)

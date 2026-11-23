@@ -15,6 +15,10 @@
 - with --crawl N: up to N same-host pages for broken links and pages
   missing from the sitemap.
 
+With --map-host, robots.txt and sitemaps that name the live host (a
+production build served on this machine) are read from the base URL
+instead, so the local copy is checked, not the live site.
+
 Matching follows Google's robots.txt rules: the most specific
 user-agent group wins, the longest matching rule wins, allow wins a tie.
 
@@ -24,6 +28,7 @@ GET only. Exit codes: 0 nothing to fix, 1 something to fix, 2 could not start.
 import argparse
 import re
 import secrets
+import socket
 import sys
 import xml.etree.ElementTree as ElementTree
 from collections import deque
@@ -53,6 +58,36 @@ AI_CRAWLERS = [
     ("Perplexity-User", "Perplexity", "fetch when a user asks; generally ignores robots.txt"),
     ("Google-Extended", "Google", "Gemini training and grounding; does not affect Google Search"),
 ]
+
+
+class HostMap:
+    """URLs on the live host, read from the local base URL instead (--map-host)."""
+
+    def __init__(self, live_host, base):
+        self.live_host = None
+        if live_host:
+            self.live_host = live_host.lower()
+        self.base = urlsplit(base)
+
+    def local(self, url):
+        if self.live_host is None:
+            return url
+        parts = urlsplit(url)
+        if (parts.hostname or "").lower() != self.live_host:
+            return url
+        return urlunsplit((self.base.scheme, self.base.netloc, parts.path or "/", parts.query, ""))
+
+
+NO_MAP = HostMap(None, "")
+
+
+def has_dns(host):
+    """True when the host has an address. A lookup, not a request to the host."""
+    try:
+        socket.getaddrinfo(host, 443)
+    except (socket.gaierror, UnicodeError):
+        return False
+    return True
 
 
 def examples(items):
@@ -226,7 +261,7 @@ def has_child(element, name):
     return element.find(SITEMAP_NAMESPACE + name) is not None
 
 
-def check_urlset(url, root, base_host):
+def check_urlset(url, root, base_host, hosts=NO_MAP):
     """Return (results, listed URLs)."""
     results = []
     locations = []
@@ -235,7 +270,7 @@ def check_urlset(url, root, base_host):
     for entry in root.findall(SITEMAP_NAMESPACE + "url"):
         location = child_text(entry, "loc")
         if location:
-            locations.append(location)
+            locations.append(hosts.local(location))
         for name in ("priority", "changefreq"):
             if has_child(entry, name):
                 ignored_tags.add(name)
@@ -263,7 +298,7 @@ def check_urlset(url, root, base_host):
     return results, locations
 
 
-def check_listed_url(client, sitemap_url, location):
+def check_listed_url(client, sitemap_url, location, hosts=NO_MAP):
     try:
         response = client.get(location)
     except (crawl_http.Refused, crawl_http.RequestFailed) as error:
@@ -278,15 +313,17 @@ def check_listed_url(client, sitemap_url, location):
             return [(MAJOR, location, f"listed in {sitemap_url} but says {word}")]
     canonicals = facts.canonicals()
     if len(canonicals) == 1:
-        target = crawl_http.normalize_url(urljoin(location, canonicals[0]))
+        target = crawl_http.normalize_url(hosts.local(urljoin(location, canonicals[0])))
         if target != crawl_http.normalize_url(location):
             return [(MINOR, location, f"listed in {sitemap_url} but its canonical is {target}")]
     return []
 
 
-def check_sitemaps(client, base, robots_sitemaps, sample):
+def check_sitemaps(client, base, robots_sitemaps, sample, hosts=NO_MAP):
     """Return (results, every listed URL)."""
-    sources = list(robots_sitemaps)
+    sources = []
+    for source in robots_sitemaps:
+        sources.append(hosts.local(source))
     if not sources:
         sources = [urljoin(base, "sitemap.xml")]
     base_host = crawl_http.host_of(base)
@@ -311,12 +348,12 @@ def check_sitemaps(client, base, robots_sitemaps, sample):
                     results.append((NOT_CHECKED, location, f"only the first {MAX_CHILD_SITEMAPS} child sitemaps are read"))
                     break
                 children_read += 1
-                queue.append(location)
+                queue.append(hosts.local(location))
             continue
         if root.tag != SITEMAP_NAMESPACE + "urlset":
             results.append((MAJOR, url, f"not a sitemap (root tag {root.tag})"))
             continue
-        urlset_results, locations = check_urlset(url, root, base_host)
+        urlset_results, locations = check_urlset(url, root, base_host, hosts)
         results.extend(urlset_results)
         listed.extend(locations)
         # URLs already flagged as relative or on another host are not fetched.
@@ -325,7 +362,7 @@ def check_sitemaps(client, base, robots_sitemaps, sample):
             if same_site_page(location, base_host):
                 same_host.append(location)
         for location in same_host[:sample]:
-            results.extend(check_listed_url(client, url, location))
+            results.extend(check_listed_url(client, url, location, hosts))
     if not found_one and not results_have_level(results, NOT_CHECKED):
         results.append((MINOR, sources[0], "no sitemap found; list your public pages in one"))
     return results, listed
@@ -398,7 +435,7 @@ def check_https(client, base):
     return [(MAJOR, plain, f"http answers {response.status} without moving to https")]
 
 
-def check_one_host(client, base):
+def check_one_host(client, base, resolves=has_dns):
     host = crawl_http.host_of(base)
     if host.startswith("www."):
         other = host[len("www."):]
@@ -408,6 +445,8 @@ def check_one_host(client, base):
     try:
         client.check(url)
     except crawl_http.Refused:
+        if not resolves(other):
+            return [(NOTE, url, f"{other} has no DNS record; nothing to redirect")]
         return [(NOT_CHECKED, url, f"pass --allow-host {other} (after the human's yes) to check one host")]
     try:
         response = client.get(url)
@@ -538,6 +577,11 @@ def parse_args(argv):
     )
     parser.add_argument("--sample", type=int, default=DEFAULT_SAMPLE, help="sitemap URLs to fetch (default 20)")
     parser.add_argument("--crawl", type=int, default=0, help="crawl up to this many pages for broken links (default off)")
+    parser.add_argument(
+        "--map-host",
+        metavar="LIVE_HOST",
+        help="read robots.txt and sitemap URLs on this live host from the base URL instead",
+    )
     crawl_http.add_target_args(parser)
     return parser.parse_args(argv)
 
@@ -561,7 +605,8 @@ def main(argv=None):
     results = []
     robots_results, robots_sitemaps = check_robots(client, base, paths)
     results.extend(robots_results)
-    sitemap_results, listed = check_sitemaps(client, base, robots_sitemaps, args.sample)
+    hosts = HostMap(args.map_host, base)
+    sitemap_results, listed = check_sitemaps(client, base, robots_sitemaps, args.sample, hosts)
     results.extend(sitemap_results)
     results.extend(check_soft_404(client, base))
     if client.is_local(crawl_http.host_of(base)):

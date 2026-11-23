@@ -51,6 +51,10 @@
     if (element.closest("[aria-hidden=true], [hidden]")) {
       return true;
     }
+    // Inside a display:none parent the element's own style looks shown.
+    if (element.checkVisibility && !element.checkVisibility()) {
+      return true;
+    }
     const style = getComputedStyle(element);
     return style.display === "none" || style.visibility === "hidden";
   }
@@ -224,6 +228,7 @@
   const noFocusStyle = [];
   let focusChecked = 0;
   let focusBlocked = 0;
+  let focusRingOff = 0;
   const startFocus = document.activeElement;
   for (const element of visible(FOCUSABLE).slice(0, MAX_FOCUS_CHECKS)) {
     if (element.disabled || element.getAttribute("tabindex") === "-1") {
@@ -241,6 +246,13 @@
     }
     if (!element.matches(":focus")) {
       focusBlocked += 1;
+      element.blur();
+      continue;
+    }
+    // After a mouse click the browser shows no :focus-visible style for
+    // focus moved by script, so a missing ring here proves nothing.
+    if (!element.matches(":focus-visible")) {
+      focusRingOff += 1;
       element.blur();
       continue;
     }
@@ -264,6 +276,9 @@
   const notChecked = [];
   if (focusBlocked > 0 && focusChecked === 0) {
     notChecked.push("focus-not-visible: the page window has no focus; click the page and run again, or Tab through by hand");
+  }
+  if (focusRingOff > 0) {
+    notChecked.push(`focus-not-visible: ${focusRingOff} control(s) skipped, the browser hides focus rings after a mouse click; press Tab once in the page and run again, or Tab through by hand`);
   }
 
   // 2.5.8 Target Size (Minimum). Exempt: links inside a sentence, and
