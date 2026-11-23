@@ -29,7 +29,7 @@ folders directly.
 | `full-test` | Pre-PR | Ready | Tests the whole PR in a throwaway copy merged onto the latest target branch: full CI checks, key user journeys in the browser, and a diff scan for leftovers and secrets. |
 | `debug` | Build | Ready | Reproduces a bug first, shrinks it, tests one hypothesis at a time, bisects regressions in a throwaway copy, fixes the cause not the symptom, and leaves a test that fails without the fix. |
 | `logger` | Build | Ready | Adds logs, metrics and traces only where they help, in the project's own style: errors, security events, one summary event per request. Tests each key log and proves fake secrets never reach the logs. |
-| `security` | Pre-PR | Planned | Runs live attack testing against the running app (network, console, headers, auth, injection, exposed secrets, dependency audit). |
+| `security` | Pre-PR | Ready | Attacks your own running app on this machine with throwaway test accounts and keeps only holes a request proves: headers, exposed files, secrets, dependencies, access between users, login, injection. Asks before touching a deployed app, then stays read-only. |
 | `visibility-handling` | Pre-launch | Planned | Audits SEO, AEO, accessibility, and web discoverability when shipping a public web product. |
 | `SHIP-IT` | Release | Planned | Handles final commits, push, pull request, deployment, and a rollback plan. |
 
@@ -64,10 +64,12 @@ claude --plugin-dir path/to/engineering-skills
 ```
 
 Invoke skills with `/engineering:kickoff`, `/engineering:debug`,
-`/engineering:logger`, `/engineering:feature-test`, or
-`/engineering:full-test`. The agent can also trigger `debug`, `logger`,
-`feature-test` and `full-test` on its own when a bug shows up, a change
-adds a handler or job, a change is finished, or a PR is being prepared.
+`/engineering:logger`, `/engineering:security`,
+`/engineering:feature-test`, or `/engineering:full-test`. The agent can
+also trigger `debug`, `logger`, `security`, `feature-test` and
+`full-test` on its own when a bug shows up, a change adds a handler or
+job, a risky change or launch is coming, a change is finished, or a PR
+is being prepared.
 
 ### Codex
 
@@ -174,6 +176,7 @@ skills/
   kickoff/        SKILL.md, scripts/, references/, assets/
   debug/          SKILL.md, scripts/, references/
   logger/         SKILL.md, scripts/, references/, assets/
+  security/       SKILL.md, scripts/, references/
   feature-test/   SKILL.md, scripts/, references/
   full-test/      SKILL.md, scripts/, references/
 tests/            unit tests for the scripts

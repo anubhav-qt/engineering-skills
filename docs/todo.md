@@ -10,7 +10,8 @@ then one decision at a time, then build, test, plant bugs, live run.
 - [x] test: prove a change works (tests, browser checks, profiling, planted bugs). Renamed to feature-test.
 - [x] full-test: test the whole PR before sending it (full suite, type checks, lint, key user journeys, regressions across the app).
 - [x] Rename test to feature-test, and narrow it to only what the feature touches (no full suite, no full type check), leaving the rest to full-test.
-- [ ] security: live attack testing (network tab, console, headers, auth, injection, exposed secrets, dependency audit), beyond the built-in /security-review that only reads code.
+- [x] security: live attack testing of the running app on this machine, proof for every hole, read-only on a deployed app after a yes.
+- [ ] security follow-up: flag typosquatted dependency names (open in docs/security-research.md).
 - [x] debug: reproduce first, find the real cause, never patch the symptom, keep a test for it.
 - [x] logger: add logs, metrics and traces only where they help, test them, and prove fake secrets stay out.
 - [ ] logger follow-up: find_log_calls.py lists log calls inside Python docstring examples (listed, never flagged).
