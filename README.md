@@ -10,7 +10,7 @@ to end.
 
 ```
 /plugin marketplace add anubhav-qt/engineering-skills
-/plugin install engineering@anubhav-qt
+/plugin install software-engineering@anubhav-qt
 ```
 
 Using Codex or Antigravity? See [Install](#install) to load the `skills/`
@@ -47,14 +47,14 @@ Install the plugin inside Claude Code:
 
 ```
 /plugin marketplace add anubhav-qt/engineering-skills
-/plugin install engineering@anubhav-qt
+/plugin install software-engineering@anubhav-qt
 ```
 
 Or from a terminal:
 
 ```bash
 claude plugin marketplace add anubhav-qt/engineering-skills
-claude plugin install engineering@anubhav-qt
+claude plugin install software-engineering@anubhav-qt
 ```
 
 To try a local checkout without installing:
@@ -63,9 +63,9 @@ To try a local checkout without installing:
 claude --plugin-dir path/to/engineering-skills
 ```
 
-Invoke skills with `/engineering:kickoff`, `/engineering:debug`,
-`/engineering:logger`, `/engineering:security`,
-`/engineering:feature-test`, or `/engineering:full-test`. The agent can
+Invoke skills with `/software-engineering:kickoff`, `/software-engineering:debug`,
+`/software-engineering:logger`, `/software-engineering:security`,
+`/software-engineering:feature-test`, or `/software-engineering:full-test`. The agent can
 also trigger `debug`, `logger`, `security`, `feature-test` and
 `full-test` on its own when a bug shows up, a change adds a handler or
 job, a risky change or launch is coming, a change is finished, or a PR
