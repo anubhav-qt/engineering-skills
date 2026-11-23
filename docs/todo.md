@@ -15,7 +15,8 @@ then one decision at a time, then build, test, plant bugs, live run.
 - [x] debug: reproduce first, find the real cause, never patch the symptom, keep a test for it.
 - [x] logger: add logs, metrics and traces only where they help, test them, and prove fake secrets stay out.
 - [ ] logger follow-up: find_log_calls.py lists log calls inside Python docstring examples (listed, never flagged).
-- [ ] visibility-handling: SEO, AEO, accessibility and anything that makes the product visible on the web; used only when needed.
+- [x] visibility-handling: SEO, AEO, accessibility and anything that makes the product visible on the web; used only when needed.
+- [ ] visibility-handling follow-up: try the submit flow (Search Console, Bing, IndexNow) on a real live site; not run yet.
 - [ ] SHIP-IT: final commits, push, PR, deploy, and a rollback plan. Command `/software-engineering:SHIP-IT`, title "SHIP-IT" (no "!", it is not allowed in skill names).
 - [ ] When building SHIP-IT: add staging to it (deploy to staging, check, then production), and make kickoff ask about staging (is there one, where, how to deploy).
 

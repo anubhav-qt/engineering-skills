@@ -30,7 +30,7 @@ folders directly.
 | `debug` | Build | Ready | Reproduces a bug first, shrinks it, tests one hypothesis at a time, bisects regressions in a throwaway copy, fixes the cause not the symptom, and leaves a test that fails without the fix. |
 | `logger` | Build | Ready | Adds logs, metrics and traces only where they help, in the project's own style: errors, security events, one summary event per request. Tests each key log and proves fake secrets never reach the logs. |
 | `security` | Pre-PR | Ready | Attacks your own running app on this machine with throwaway test accounts and keeps only holes a request proves: headers, exposed files, secrets, dependencies, access between users, login, injection. Asks before touching a deployed app, then stays read-only. |
-| `visibility-handling` | Pre-launch | Planned | Audits SEO, AEO, accessibility, and web discoverability when shipping a public web product. |
+| `visibility-handling` | Pre-launch | Ready | Checks what search and AI crawlers see on each changed public page, robots.txt, sitemaps and soft 404s, then WCAG 2.2 AA with axe-core and a keyboard pass. After a yes, submits the live site to Google Search Console, Bing and IndexNow. |
 | `SHIP-IT` | Release | Planned | Handles final commits, push, pull request, deployment, and a rollback plan. |
 
 Ready skills can be used now. Planned skills are tracked in
@@ -65,11 +65,12 @@ claude --plugin-dir path/to/engineering-skills
 
 Invoke skills with `/software-engineering:kickoff`, `/software-engineering:debug`,
 `/software-engineering:logger`, `/software-engineering:security`,
+`/software-engineering:visibility-handling`,
 `/software-engineering:feature-test`, or `/software-engineering:full-test`. The agent can
-also trigger `debug`, `logger`, `security`, `feature-test` and
-`full-test` on its own when a bug shows up, a change adds a handler or
-job, a risky change or launch is coming, a change is finished, or a PR
-is being prepared.
+also trigger `debug`, `logger`, `security`, `visibility-handling`,
+`feature-test` and `full-test` on its own when a bug shows up, a change
+adds a handler or job, a risky change or launch is coming, public pages
+or a web UI change, a change is finished, or a PR is being prepared.
 
 ### Codex
 
@@ -177,6 +178,7 @@ skills/
   debug/          SKILL.md, scripts/, references/
   logger/         SKILL.md, scripts/, references/, assets/
   security/       SKILL.md, scripts/, references/
+  visibility-handling/  SKILL.md, scripts/, references/, assets/
   feature-test/   SKILL.md, scripts/, references/
   full-test/      SKILL.md, scripts/, references/
 tests/            unit tests for the scripts
